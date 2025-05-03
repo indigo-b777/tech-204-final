@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Critique Trigger</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background: #111;
+      color: white;
+    }
+    video, canvas {
+      max-width: 100%;
+      height: auto;
+      margin: 1rem 0;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 1rem;
+      background: #444;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    button:hover {
+      background: #666;
+    }
+  </style>
+</head>
+<body>
+  <h1>What do you think about me</h1>
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas" style="display: none;"></canvas>
+  <br />
+  <button id="snap">Take Photo</button>
+
+  <script>
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const snapBtn = document.getElementById("snap");
+
+    // Start rear camera if available, else fallback to front
+    function startCamera() {
+      navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: "environment" } }
+      })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        console.warn("Back camera not available, falling back to front:", err);
+        navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user" }
+        })
+        .then(stream => {
+          video.srcObject = stream;
+        })
+        .catch(err => {
+          console.error("Camera access failed:", err);
+        });
+      });
+    }
+
+    // Take a snapshot and send to server
+    snapBtn.addEventListener("click", () => {
+      const context = canvas.getContext("2d");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const imageData = canvas.toDataURL("image/png");
+
+      fetch("http://10.17.83.43:5000/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: imageData })
+      })
+      .then(res => res.text())
+      .then(data => {
+        alert("Critique triggered!");
+        console.log(data);
+      })
+      .catch(err => {
+        console.error("Failed to send image:", err);
+      });
+    });
+
+    startCamera();
+  </script>
+</body>
+</html>
