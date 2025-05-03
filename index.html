@@ -73,7 +73,7 @@
 
       const imageData = canvas.toDataURL("image/png");
 
-      fetch("https://10.17.122.198:5000/upload", {
+      fetch("http://192.168.1.185:5000/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image: imageData })
